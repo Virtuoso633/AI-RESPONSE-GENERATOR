@@ -49,6 +49,10 @@ with st.sidebar:
 # Main area for query input and responses
 st.header("Ask a Question")
 
+# Dropdown for tone selection
+tone_options = ["Both", "Casual", "Formal"]
+selected_tone = st.selectbox("Select response style:", tone_options)
+
 with st.form("query_form"):
     query = st.text_area("Enter your query", height=100)
     submitted = st.form_submit_button("Generate Responses")
@@ -69,6 +73,7 @@ with st.form("query_form"):
                     # Store in session state for display
                     st.session_state.casual_response = result["casual_response"]
                     st.session_state.formal_response = result["formal_response"]
+                    st.session_state.last_selected_tone = selected_tone # Store the tone selected for this generation
                     
                     # Refresh history
                     history_response = requests.get(f"{API_URL}/history?user_id={user_id}")
@@ -81,12 +86,20 @@ with st.form("query_form"):
 
 # Display responses if available
 if "casual_response" in st.session_state and "formal_response" in st.session_state:
-    col1, col2 = st.columns(2)
     
-    with col1:
+    current_display_tone = st.session_state.get("last_selected_tone", "Both")
+
+    if current_display_tone == "Both":
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("Casual Response")
+            st.write(st.session_state.casual_response)
+        with col2:
+            st.subheader("Formal Response")
+            st.write(st.session_state.formal_response)
+    elif current_display_tone == "Casual":
         st.subheader("Casual Response")
         st.write(st.session_state.casual_response)
-    
-    with col2:
+    elif current_display_tone == "Formal":
         st.subheader("Formal Response")
         st.write(st.session_state.formal_response)

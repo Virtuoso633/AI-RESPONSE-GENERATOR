@@ -1,4 +1,4 @@
-version: '3'
+
 
 services:
   db:
@@ -11,6 +11,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck: # Added healthcheck
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ai_responses"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: ./backend
@@ -23,7 +28,8 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/ai_responses
       - GROQ_API_KEY=${GROQ_API_KEY}
     depends_on:
-      - db
+      db: # Modified depends_on
+        condition: service_healthy 
 
   frontend:
     build: ./frontend
@@ -35,7 +41,8 @@ services:
     environment:
       - API_URL=http://backend:8000/api
     depends_on:
-      - backend
+      backend: # Consider adding a healthcheck to backend too for robust startup
+        condition: service_started # Or service_healthy if backend has a healthcheck
 
 volumes:
   postgres_data:
